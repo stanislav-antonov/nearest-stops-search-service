@@ -3,15 +3,18 @@ package pse;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Properties;
 
 public class Config {
 
     private static final String overridesFile = "./config/main.properties";
-    private static final String defaultsFile = "./config/main.default.properties";
+    private static final String defaultsFile = "resources/main.default.properties";
 
     private static final String propKeyPort = "server.port";
     private static final String propKeyLogFile = "server.log.file";
+    private static final String propKeyStopDatasourceUrl = "datasource.stop.url";
 
     private final Properties mDefaults = new Properties();
     private final Properties mOverrides = new Properties();
@@ -39,7 +42,7 @@ public class Config {
         final Properties props = new Properties();
 
         try {
-            in = new FileInputStream(defaultsFile);
+            in = getClass().getResourceAsStream(defaultsFile);
             props.load(in);
         } finally {
             if (in != null) {
@@ -84,5 +87,10 @@ public class Config {
 
     public String getLogFile() {
         return mOverrides.getProperty(propKeyLogFile, mDefaults.getProperty(propKeyLogFile));
+    }
+
+    public URI getStopDatasourceUrl() throws URISyntaxException {
+        final String url = mOverrides.getProperty(propKeyStopDatasourceUrl, mDefaults.getProperty(propKeyStopDatasourceUrl));
+        return url != null ? new URI(url) : null;
     }
 }

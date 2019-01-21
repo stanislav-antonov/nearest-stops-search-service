@@ -4,7 +4,6 @@ import com.sun.net.httpserver.HttpServer;
 
 import java.net.InetSocketAddress;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -30,9 +29,12 @@ public class Main {
         }
 
         final Logger logger;
+        final StopProvider provider;
 
         try {
             logger = Log.create(config.getLogFile());
+            provider = new StopProvider(config, logger);
+
             mServer = HttpServer.create();
             mServer.bind(new InetSocketAddress(config.getPort()), -1);
         } catch(Exception e) {
@@ -44,16 +46,14 @@ public class Main {
         // curl --header "Content-Type: application/json" --request POST  --data '{ "point": {"lat": 34.0943, "lng": 33.4434}}' http://localhost:3333/nearestStops
         mServer.createContext(NearestStopsHttpHandler.uriNearestStops, new NearestStopsHttpHandler(mKdTree, logger));
 
-        List<Stop> stops = new ArrayList<>();
-        stops.add(new Stop(1, "Tarifnaya", 34.4324234, 35.5534534));
-        stops.add(new Stop(2, "Titova", 34.5453535, 34.7567567));
-        stops.add(new Stop(3, "Opolchenskaya", 35.7657567, 35.1313131));
-        stops.add(new Stop(4, "Dubovka", 36.1343243, 34.746736));
-        stops.add(new Stop(5, "Pionerskaya", 35.994343, 34.6345453));
-        stops.add(new Stop(6, "Komsomolskaya", 34.8899434, 34.2434324));
-        mKdTree.buildRecursive(stops);
+        try {
+            final List<Stop> stops = provider.getList();
+            mKdTree.buildIterative(stops);
 
-        mServer.start();
-        logger.info("Server is running and listening on " + config.getPort());
+            mServer.start();
+            logger.info("Server is running and listening on " + config.getPort());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
